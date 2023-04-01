@@ -10,9 +10,11 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class PickingApp {
@@ -39,8 +41,10 @@ public class PickingApp {
 
 
         Store store = objectMapper.readValue(storeFile, Store.class);
-        List<Orders> orders = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
+        List<Orders> ordersList = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
 
+//        enable only for get max order value
+        ordersList.sort(Comparator.comparing(Orders::getOrderValue));
 
         List<Picker> pickersList = new ArrayList<>();
         for (int i = 0; i < store.getPickers().size(); i++) {
@@ -50,7 +54,8 @@ public class PickingApp {
         }
 
 
-        int size = orders.size();
+        int size = ordersList.size();
+        Duration lastTime = null;
 
         while (size > 0) {
 
@@ -59,26 +64,36 @@ public class PickingApp {
                 String picker = pickersList.get(i).getPicker();
                 LocalTime pickerStartTime = pickersList.get(i).getPickingStartTime();
 
-                for (int j = 0; j < orders.size(); j++) {
+                for (int j = 0; j < ordersList.size(); ) {
 
-                    if (pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes()).isAfter(store.getPickingEndTime())  ||
-                            pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes()).isAfter(orders.get(j).getCompleteBy())) {
+//                    check end time for picker
+                    if (pickerStartTime.isAfter(store.getPickingEndTime())) {
                         size = 0;
+                        break;
+//                        check if completing time is out of picker time
+                    } else if (pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
+//                        if its second way of picking
+                        assert lastTime != null;
+                        if (!pickerStartTime.minusMinutes(lastTime.toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
+                            data.write("\n" + "OR" + "\n\n" + picker + " " + ordersList.get(j).getOrderId() + " " + pickerStartTime.minusMinutes(lastTime.toMinutes()) + "\n");
+                            ordersList.remove(ordersList.get(j));
+                        }
+                        size--;
                         break;
                     }
 
+
                     //set order id for current picker
-                    pickersList.get(i).setOrderId(orders.get(j).getOrderId());
+                    pickersList.get(i).setOrderId(ordersList.get(j).getOrderId());
                     String orderId = pickersList.get(i).getOrderId();
 
-                    System.out.println(picker + " " + orderId + " " + pickerStartTime);
                     data.write(picker + " " + orderId + " " + pickerStartTime + "\n");
 
-                    pickerStartTime = pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes());
+                    pickerStartTime = pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes());
                     pickersList.get(i).setPickingStartTime(pickerStartTime);
 
-
-                    orders.remove(orders.get(j));
+                    lastTime = ordersList.get(j).getPickingTime();
+                    ordersList.remove(ordersList.get(j));
                     size--;
                     break;
                 }
