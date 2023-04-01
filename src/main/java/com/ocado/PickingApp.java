@@ -6,12 +6,13 @@ import com.ocado.oders.Orders;
 import com.ocado.store.Picker;
 import com.ocado.store.Store;
 
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class PickingApp {
@@ -25,6 +26,8 @@ public class PickingApp {
         FileReader storeFile = new FileReader("src/main/resources/test/advanced-allocation/store.json");
         FileReader ordersFile = new FileReader("src/main/resources/test/advanced-allocation/orders.json");
 
+        BufferedWriter data = new BufferedWriter(new FileWriter("OUTPUT"));
+
 
         Store store = objectMapper.readValue(storeFile, Store.class);
         List<Orders> orders = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
@@ -33,17 +36,31 @@ public class PickingApp {
         List<Picker> pickersList = new ArrayList<>();
         for (int i = 0; i < store.getPickers().size(); i++) {
             String pikerName = store.getPickers().get(i);
-            String orderId = orders.get(i).getOrderId();
             LocalTime startPickingTime = store.getPickingStartTime();
-            pickersList.set(i, new Picker(pikerName, orderId, startPickingTime));
+            pickersList.add(i, new Picker(pikerName, null, startPickingTime));
         }
+        while (orders.size() > 0) {
+            for (int i = 0; i < pickersList.size(); i++) {
 
+                String picker = pickersList.get(i).getPicker();
+                LocalTime pickerStartTime = pickersList.get(i).getPickingStartTime();
+                for (int j = 0; j < orders.size(); j++) {
+//set order id for current picker
+                    pickersList.get(i).setOrderId(orders.get(j).getOrderId());
+                    String orderId = pickersList.get(i).getOrderId();
 
+                    System.out.println(picker + " " + orderId + " " + pickerStartTime);
+                    data.write(picker + " " + orderId + " " + pickerStartTime + "\n");
 
+                    pickerStartTime = pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes());
+                    pickersList.get(i).setPickingStartTime(pickerStartTime);
 
-        System.out.println(store.getPickers());
-        System.out.println(orders.get(0));
-
+                    orders.remove(orders.get(j));
+                    break;
+                }
+            }
+        }
+        data.close();
 
     }
 }
