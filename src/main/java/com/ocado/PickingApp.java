@@ -19,14 +19,23 @@ public class PickingApp {
 
 
     public static void main(String[] args) throws IOException {
+
+
+        String storeFileName = "src/main/resources/test/advanced-allocation/store.json";
+        String ordersFileName = "src/main/resources/test/advanced-allocation/orders.json";
+        String output = "OUTPUT";
+        storeFulfillment(storeFileName, ordersFileName, output);
+
+    }
+
+    private static void storeFulfillment(String storeFileName, String ordersFileName, String output) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
 //        solve invalid definition for LocalTime
+        BufferedWriter data = new BufferedWriter(new FileWriter(output));
         objectMapper.registerModule(new JavaTimeModule());
 
-        FileReader storeFile = new FileReader("src/main/resources/test/advanced-allocation/store.json");
-        FileReader ordersFile = new FileReader("src/main/resources/test/advanced-allocation/orders.json");
-
-        BufferedWriter data = new BufferedWriter(new FileWriter("OUTPUT"));
+        FileReader storeFile = new FileReader(storeFileName);
+        FileReader ordersFile = new FileReader(ordersFileName);
 
 
         Store store = objectMapper.readValue(storeFile, Store.class);
@@ -61,6 +70,5 @@ public class PickingApp {
             }
         }
         data.close();
-
     }
 }
