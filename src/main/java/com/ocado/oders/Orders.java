@@ -1,0 +1,22 @@
+package com.ocado.oders;
+
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalTime;
+
+
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+public class Orders {
+
+    private String orderId;
+    private BigDecimal orderValue;
+    private Duration pickingTime;
+    private LocalTime completeBy;
+
+}
