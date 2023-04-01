@@ -44,7 +44,8 @@ public class PickingApp {
         List<Orders> ordersList = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
 
 //        enable only for get max order value
-        ordersList.sort(Comparator.comparing(Orders::getOrderValue));
+        ordersList.sort(Comparator.comparing(Orders::getOrderValue).reversed());
+
 
         List<Picker> pickersList = new ArrayList<>();
         for (int i = 0; i < store.getPickers().size(); i++) {
@@ -73,11 +74,11 @@ public class PickingApp {
 //                        check if completing time is out of picker time
                     } else if (pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
 //                        if its second way of picking
-                        assert lastTime != null;
-                        if (!pickerStartTime.minusMinutes(lastTime.toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
-                            data.write("\n" + "OR" + "\n\n" + picker + " " + ordersList.get(j).getOrderId() + " " + pickerStartTime.minusMinutes(lastTime.toMinutes()) + "\n");
-                            ordersList.remove(ordersList.get(j));
-                        }
+//                        assert lastTime != null;
+//                        if (!pickerStartTime.minusMinutes(lastTime.toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
+//                            data.write("\n" + "OR" + "\n\n" + picker + " " + ordersList.get(j).getOrderId() + " " + pickerStartTime.minusMinutes(lastTime.toMinutes()) + "\n");
+//                            ordersList.remove(ordersList.get(j));
+//                        }
                         size--;
                         break;
                     }
