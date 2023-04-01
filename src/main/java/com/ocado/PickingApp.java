@@ -28,7 +28,7 @@ public class PickingApp {
 
     }
 
-    private static void storeFulfillment(String storeFileName, String ordersFileName, String output) throws IOException {
+    public static void storeFulfillment(String storeFileName, String ordersFileName, String output) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
 //        solve invalid definition for LocalTime
         BufferedWriter data = new BufferedWriter(new FileWriter(output));
@@ -48,13 +48,26 @@ public class PickingApp {
             LocalTime startPickingTime = store.getPickingStartTime();
             pickersList.add(i, new Picker(pikerName, null, startPickingTime));
         }
-        while (orders.size() > 0) {
+
+
+        int size = orders.size();
+
+        while (size > 0) {
+
             for (int i = 0; i < pickersList.size(); i++) {
 
                 String picker = pickersList.get(i).getPicker();
                 LocalTime pickerStartTime = pickersList.get(i).getPickingStartTime();
+
                 for (int j = 0; j < orders.size(); j++) {
-//set order id for current picker
+
+                    if (pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes()).isAfter(store.getPickingEndTime())  ||
+                            pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes()).isAfter(orders.get(j).getCompleteBy())) {
+                        size = 0;
+                        break;
+                    }
+
+                    //set order id for current picker
                     pickersList.get(i).setOrderId(orders.get(j).getOrderId());
                     String orderId = pickersList.get(i).getOrderId();
 
@@ -64,7 +77,9 @@ public class PickingApp {
                     pickerStartTime = pickerStartTime.plusMinutes(orders.get(j).getPickingTime().toMinutes());
                     pickersList.get(i).setPickingStartTime(pickerStartTime);
 
+
                     orders.remove(orders.get(j));
+                    size--;
                     break;
                 }
             }
