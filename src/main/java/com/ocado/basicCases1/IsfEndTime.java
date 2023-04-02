@@ -1,4 +1,4 @@
-package com.ocado.BasicCases1;
+package com.ocado.basicCases1;
 
 import com.ocado.PickingApp;
 

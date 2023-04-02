@@ -16,7 +16,7 @@ public class Orders {
 
     private String orderId;
     private BigDecimal orderValue;
-    private Duration pickingTime;
+    private Duration duration;
     private LocalTime completeBy;
 
 }

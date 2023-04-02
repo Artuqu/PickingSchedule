@@ -14,4 +14,5 @@ public class Picker {
     private String picker;
     private String orderId;
     private LocalTime pickingStartTime;
+    private LocalTime pickingEndTime;
 }

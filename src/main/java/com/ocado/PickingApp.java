@@ -5,6 +5,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ocado.objects.Orders;
 import com.ocado.objects.Picker;
 import com.ocado.objects.Store;
+import com.ocado.sorters.CompleteBySorter;
+import com.ocado.sorters.DurationTimeSorter;
+import com.ocado.sorters.OrderValueSorter;
 
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -12,10 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class PickingApp {
 
@@ -43,15 +43,18 @@ public class PickingApp {
         Store store = objectMapper.readValue(storeFile, Store.class);
         List<Orders> ordersList = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
 
-//        enable only for get max order value
-        ordersList.sort(Comparator.comparing(Orders::getOrderValue).reversed());
+//        enable sorting to get max efficiency
+        ordersList.sort(new CompleteBySorter()
+                .thenComparing(new DurationTimeSorter())
+                .thenComparing(new OrderValueSorter()));
 
 
         List<Picker> pickersList = new ArrayList<>();
         for (int i = 0; i < store.getPickers().size(); i++) {
             String pikerName = store.getPickers().get(i);
             LocalTime startPickingTime = store.getPickingStartTime();
-            pickersList.add(i, new Picker(pikerName, null, startPickingTime));
+            LocalTime endPickingTime = store.getPickingEndTime();
+            pickersList.add(i, new Picker(pikerName, null, startPickingTime, endPickingTime));
         }
 
 
@@ -65,7 +68,7 @@ public class PickingApp {
 
             for (int i = 0; i < pickersList.size(); i++) {
 
-                String picker = pickersList.get(i).getPicker();
+                String pickerName = pickersList.get(i).getPicker();
                 LocalTime pickerStartTime = pickersList.get(i).getPickingStartTime();
 
                 if (j < ordersList.size()) {
@@ -73,25 +76,30 @@ public class PickingApp {
                     pickersList.get(i).setOrderId(ordersList.get(j).getOrderId());
                     String orderId = pickersList.get(i).getOrderId();
 //                    check end time for picker
-                    if (pickerStartTime.isAfter(store.getPickingEndTime())) {
+                    LocalTime pikerTimeAfterTask = pickerStartTime.plusMinutes(ordersList.get(j).getDuration().toMinutes());
+                    LocalTime endPickingTime = pickersList.get(0).getPickingEndTime();
+                    LocalTime endCompleteTime = ordersList.get(j).getCompleteBy();
+
+//                        check if completing time is out of picker time
+                    if (pikerTimeAfterTask.isAfter(endPickingTime)) {
                         size = 0;
                         break;
-//                        check if completing time is out of picker time
-                    } else if (pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes()).isAfter(ordersList.get(j).getCompleteBy())) {
-                        j++;
-                        i--;
-                        if (i > 0 && j == ordersList.size() && pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes()).isBefore(ordersList.get(j).getCompleteBy())) {
-                            data.write(picker + " " + orderId + " " + pickerStartTime + "\n");
+//                        switch piker if there is on time
+                    } else if (pikerTimeAfterTask.isAfter(endCompleteTime)) {
+                        if (i == pickersList.size() - 1) {
+                            i = 0;
+                        } else {
+                            i++;
                         }
                     } else {
                         //set order id for current picker
 
-                        data.write(picker + " " + orderId + " " + pickerStartTime + "\n");
+                        data.write(pickerName + " " + orderId + " " + pickerStartTime + "\n");
 
-                        pickerStartTime = pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes());
+                        pickerStartTime = pickerStartTime.plusMinutes(ordersList.get(j).getDuration().toMinutes());
                         pickersList.get(i).setPickingStartTime(pickerStartTime);
 
-                        lastTime = ordersList.get(j).getPickingTime();
+                        lastTime = ordersList.get(j).getDuration();
                         ordersList.remove(j);
                         if (j > 0) {
                             j = 0;
