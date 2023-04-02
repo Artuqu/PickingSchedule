@@ -1,4 +1,4 @@
-package com.ocado.store;
+package com.ocado.objects;
 
 import lombok.*;
 
