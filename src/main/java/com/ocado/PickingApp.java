@@ -5,9 +5,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ocado.objects.Orders;
 import com.ocado.objects.Picker;
 import com.ocado.objects.Store;
-import com.ocado.sorters.CompleteBySorter;
-import com.ocado.sorters.DurationTimeSorter;
-import com.ocado.sorters.OrderValueSorter;
+import com.ocado.comparators.CompleteBySorter;
+import com.ocado.comparators.DurationTimeSorter;
+import com.ocado.comparators.OrderValueSorter;
 
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -114,7 +114,7 @@ public class PickingApp {
                         pickersList.get(i).setPickingStartTime(pickerStartTime);
 
 
-                        //                      check if there is substitute task may be completed in same time
+                        //                      check if substitute task may be completed in same time
                         if (j + 1 < ordersList.size()) {
                             pickerStartTime = pickerStartTime.minusMinutes(ordersList.get(j).getPickingTime().toMinutes());
                             LocalTime pikerTimeAfterSubstituteTask = pickerStartTime.plusMinutes(ordersList.get(j + 1).getPickingTime().toMinutes());
@@ -125,7 +125,6 @@ public class PickingApp {
                                 orderId = pickersList.get(i).getOrderId();
                                 orEnabled = true;
                                 if (orAppend == 0) {
-//                                    OR.append(data);
                                     OR.append(pickerName + " " + orderId + " " + pickerStartTime + "\n");
                                 } else {
                                     OR.append(pickerName + " " + orderId + " " + pickerStartTime + "\n");

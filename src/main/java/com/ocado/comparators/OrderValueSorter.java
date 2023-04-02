@@ -1,4 +1,4 @@
-package com.ocado.sorters;
+package com.ocado.comparators;
 
 import com.ocado.objects.Orders;
 
