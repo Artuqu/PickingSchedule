@@ -13,9 +13,10 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class PickingApp {
 
@@ -44,9 +45,10 @@ public class PickingApp {
         List<Orders> ordersList = new ArrayList<>(Arrays.asList(objectMapper.readValue(ordersFile, Orders[].class)));
 
 //        enable sorting to get max efficiency
+//        if you want to optimize order to get max value need to switch OrderValueSorter to second place
         ordersList.sort(new CompleteBySorter()
-                .thenComparing(new DurationTimeSorter())
-                .thenComparing(new OrderValueSorter()));
+                .thenComparing(new OrderValueSorter().reversed())
+                .thenComparing(new DurationTimeSorter()));
 
 
         List<Picker> pickersList = new ArrayList<>();
@@ -59,9 +61,6 @@ public class PickingApp {
 
 
         int size = ordersList.size();
-        Duration lastTime = null;
-
-
         int j = 0;
 
         while (size > 0) {
@@ -76,7 +75,7 @@ public class PickingApp {
                     pickersList.get(i).setOrderId(ordersList.get(j).getOrderId());
                     String orderId = pickersList.get(i).getOrderId();
 //                    check end time for picker
-                    LocalTime pikerTimeAfterTask = pickerStartTime.plusMinutes(ordersList.get(j).getDuration().toMinutes());
+                    LocalTime pikerTimeAfterTask = pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes());
                     LocalTime endPickingTime = pickersList.get(0).getPickingEndTime();
                     LocalTime endCompleteTime = ordersList.get(j).getCompleteBy();
 
@@ -84,22 +83,24 @@ public class PickingApp {
                     if (pikerTimeAfterTask.isAfter(endPickingTime)) {
                         size = 0;
                         break;
-//                        switch piker if there is on time
+//                        switch piker if there is no time
                     } else if (pikerTimeAfterTask.isAfter(endCompleteTime)) {
-                        if (i == pickersList.size() - 1) {
-                            i = 0;
+                        if (i == pickersList.size() - 1 && pickersList.size() > 1) {
+                            i = -1;
+//                            switch task if picker has no time existed
+                        } else if (i < pickersList.size() - 1 && pickersList.size() > 1) {
+                            j++;
+                            size--;
                         } else {
-                            i++;
+                            size = 0;
                         }
                     } else {
-                        //set order id for current picker
 
                         data.write(pickerName + " " + orderId + " " + pickerStartTime + "\n");
 
-                        pickerStartTime = pickerStartTime.plusMinutes(ordersList.get(j).getDuration().toMinutes());
+                        pickerStartTime = pickerStartTime.plusMinutes(ordersList.get(j).getPickingTime().toMinutes());
                         pickersList.get(i).setPickingStartTime(pickerStartTime);
 
-                        lastTime = ordersList.get(j).getDuration();
                         ordersList.remove(j);
                         if (j > 0) {
                             j = 0;
